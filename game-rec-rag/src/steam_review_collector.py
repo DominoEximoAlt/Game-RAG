@@ -4,38 +4,17 @@ import time
 from urllib import response
 import requests
 from config import STEAM_API_KEY, STEAM_ID
-
+from get_library import get_owned_games
 
 def main(): 
 
+    games = get_owned_games(STEAM_API_KEY, STEAM_ID)
     cursor = "*"
-    response = requests.get(
-                    f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={STEAM_API_KEY}&steamid={STEAM_ID}",
-                    params={
-                        "json": 1,
-                        "filter": "all",
-                        "language": "english",
-                        "review_type": "all",
-                        "num_per_page": 5,
-                        "include_appinfo": 1,
-                        "cursor": cursor,  # '*' means "start from the beginning"
-                    },
-                )
-    url = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={STEAM_API_KEY}&steamid={STEAM_ID}"
-
-    print("URL:", url)
-    print("Status code:", response.status_code)
-    print("Raw response:", response.text[:300])
-    data = response.json()
-    print(json.dumps(data["response"]["games"][0], indent=2))
-    for game in data["response"]["games"]:
-        print(f"AppID: {game['appid']}, Name: {game['name']}, Playtime: {game['playtime_forever']} minutes")
-
-    appid = 367520  # Hollow Knight
     pages = 0
-
     collected = []
-    while True:
+    for game in games:
+        appid = game["appid"]
+        name = game["name"]
         try:
             response = requests.get(
                 f"https://store.steampowered.com/appreviews/{appid}",
@@ -59,7 +38,7 @@ def main():
                 break
         for review in data["reviews"]:
             collected.append({
-                "appid": appid,
+                "name": name,
                 "voted_up": review["voted_up"],
                 "hours_played": review["author"]["playtime_forever"] / 60,
                 "text": review["review"],
