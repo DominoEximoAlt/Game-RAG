@@ -10,6 +10,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+collected_games = set()
+
 def fetch_game_reviews(game):
     appid = game["appid"]
     name = game["name"]
@@ -65,6 +67,7 @@ def fetch_game_reviews(game):
 
 def main():
     games = get_owned_games(STEAM_API_KEY, STEAM_ID)
+    games = [game for game in games if game["appid"] not in load_already_collected("reviews.json")]
     filename = "reviews.json"
     collected = []
 
@@ -89,6 +92,15 @@ def write_review_to_file(review, filename):
     with open(filename, "a") as f:
         json.dump(review, f)
         f.write("\n")
+
+def load_already_collected(filename):
+    collected_appids = set()
+    if os.path.exists(filename):
+        with open(filename) as f:
+            for line in f:
+                review = json.loads(line)
+                collected_appids.add(review.get("appid"))  # make sure appid is saved per review
+    return collected_appids
 
 
 if __name__ == "__main__":
